@@ -1,5 +1,7 @@
-pandas
 Flask
-scikit-learn
 numpy
+pandas
+scikit-learn
+plotly
+pymongo
 gunicorn

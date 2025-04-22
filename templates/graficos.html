@@ -1,17 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gráficos e Métricas</title>
+    <title>Gráficos de Análise</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h2>Visualização de Desempenho</h2>
-        <p>Em breve você verá aqui gráficos e estatísticas detalhadas sobre as predições feitas pelo modelo.</p>
-        <a href="{{ url_for('home') }}">
-            <button>Voltar ao Formulário</button>
-        </a>
+        <h2>Análise dos Dados Coletados</h2>
+
+        {% if graficos %}
+            {% for graf in graficos %}
+                <div class="grafico-container">
+                    {{ graf | safe }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nenhum gráfico disponível no momento.</p>
+        {% endif %}
+
+        <div class="link-voltar">
+            <a href="{{ url_for('index') }}">← Voltar para a Página Inicial</a>
+        </div>
     </div>
 </body>
 </html>

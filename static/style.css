@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    max-width: 600px;
+    max-width: 700px;
     margin: 40px auto;
     padding: 30px;
     background-color: #ffffff;
@@ -17,7 +17,14 @@ body {
 h2 {
     text-align: center;
     color: #222;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+}
+
+p {
+    text-align: center;
+    color: #555;
+    font-size: 16px;
+    line-height: 1.6;
 }
 
 form label {
@@ -80,4 +87,45 @@ button:hover {
 
 .botao-graficos:hover {
     background-color: #1e7e34;
+}
+
+.grafico-container {
+    margin: 30px auto;
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.link-voltar {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.link-voltar a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    font-size: 15px;
+    transition: color 0.3s ease;
+}
+
+.link-voltar a:hover {
+    color: #0056b3;
+}
+
+/* Estilos para a página inicial */
+.container img {
+    width: 120px;
+    height: auto;
+    display: block;
+    margin: 0 auto 20px;
+    border-radius: 12px;
+}
+
+.container a button {
+    width: auto;
+    padding: 12px 20px;
+    margin: 10px;
 }

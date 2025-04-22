@@ -1,39 +1,92 @@
 from flask import Flask, request, render_template
 import pickle
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
-'''Carga do modelo preditivo'''
-model = pickle.load(open('models/modelo_preditivo.pkl','rb'))
+client = MongoClient("mongodb+srv://admin:85200285.luS@clusternovo.fle4g.mongodb.net/?retryWrites=true&w=majority&appName=Clusternovo")
+db = client["detecocup"]
+collection = db["ocupacao2"]
 
-@app.route("/", methods=['GET','POST'])
+model = pickle.load(open('models/arvore_from_pickle.pkl', 'rb'))
+
+@app.route("/")
 def index():
-    
+    return render_template("index.html")
+
+@app.route("/form", methods=['GET', 'POST'])
+def form():
     if request.method == 'POST':
-        idade = int(request.form.get("idade"))
-        sexo = int(request.form.get("sexo"))
-        pressao = int(request.form.get("pressao"))
-        potassio = float(request.form.get("potassio"))
-        colesterol = int(request.form.get("colesterol"))
-        
-        respostas = [2,5,1,4,1]
-        dados = pd.DataFrame({'Remedio':['Y','X','A','B','C'],
-                              'Valor': respostas})
-        
-        figura = px.bar(dados, x='Remedio', y='Valor')
+        temperatura = float(request.form.get("temperatura"))
+        umidade = float(request.form.get("umidade"))
+        luz = float(request.form.get("luz"))
+        co2 = float(request.form.get("co2"))
+        humidade_relativa = float(request.form.get("humidade_relativa"))
+
+        entrada_df = pd.DataFrame([{
+            'Temperature': temperatura,
+            'Humidity': umidade,
+            'Light': luz,
+            'CO2': co2,
+            'HumidityRatio': humidade_relativa
+        }])
+
+        predicao = model.predict(entrada_df)[0]
+        resultado = "Local Ocupado" if predicao == 1 else "Local Vazio"
+
+        registro = entrada_df.copy()
+        registro['Predicao'] = resultado
+        collection.insert_one(registro.to_dict(orient='records')[0])
+
+        dados = pd.DataFrame({
+            'Variável': ['Temperatura', 'Umidade', 'Luz', 'CO2', 'Umidade Relativa'],
+            'Valor': [temperatura, umidade, luz, co2, humidade_relativa]
+        })
+        figura = px.bar(dados, x='Variável', y='Valor', title='Valores informados')
         grafico = pio.to_html(figura, full_html=False)
 
-        caracteristicas = np.array([[idade, sexo, pressao, colesterol, potassio]])
-        predicao = model.predict(caracteristicas)
-        mapeamento = {0: 'Y', 1:'X', 2:'A', 3:'B', 4:'C'}
-        resultado = mapeamento.get(predicao[0])
-        return render_template('index.html', predicao = resultado, grafico=grafico)
-    
-    return render_template('index.html')
+        return render_template("form.html", predicao=resultado, grafico=grafico)
+
+    return render_template("form.html")
+
+@app.route("/graficos")
+def graficos():
+    registros = list(collection.find())
+    if not registros:
+        return render_template("graficos.html", graficos=[])
+
+    df = pd.DataFrame(registros)
+
+    colunas = ['Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio']
+    for col in colunas:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    graficos = []
+
+    freq = df['Predicao'].value_counts().reset_index()
+    freq.columns = ['Estado', 'Frequência']
+    fig1 = px.bar(freq, x='Estado', y='Frequência', title='Frequência de Ocupação')
+    graficos.append(pio.to_html(fig1, full_html=False))
+
+    for var in colunas:
+        fig = px.box(df, x='Predicao', y=var, title=f'{var} por Ocupação')
+        graficos.append(pio.to_html(fig, full_html=False))
+
+    importancias = model.feature_importances_
+    nomes_variaveis = ['Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio']
+    df_importancias = pd.DataFrame({
+        'Variável': nomes_variaveis,
+        'Importância': importancias
+    }).sort_values(by='Importância', ascending=False)
+
+    fig_importancia = px.bar(df_importancias, x='Variável', y='Importância',
+                             title='Importância de Cada Variável no Modelo')
+    graficos.append(pio.to_html(fig_importancia, full_html=False))
+
+    return render_template("graficos.html", graficos=graficos)
 
 if __name__ == "__main__":
     app.run(debug=True)
